@@ -1,6 +1,7 @@
 import express from 'express';
 import { Dbconnection } from './config/db';
 import authRoutes from './routes/authRoutes';
+import userRoutes from './routes/userRoutes';
 
 const app = express();
 
@@ -17,3 +18,4 @@ Dbconnection().then(() => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/user', userRoutes);

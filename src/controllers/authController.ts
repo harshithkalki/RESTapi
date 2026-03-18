@@ -53,3 +53,8 @@ catch(error){
     res.status(500).json({message: 'Error logging in user', error});
 }
 }
+
+export async function logoutUsers(req:Request, res:Response){
+    // Implement logout logic here (if using token-based authentication, you might want to handle token invalidation)
+    res.status(200).json({message: 'Logout successful'});
+}
