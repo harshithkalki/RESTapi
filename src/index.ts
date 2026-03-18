@@ -1,6 +1,6 @@
 import express from 'express';
 import { Dbconnection } from './config/db';
-
+import authRoutes from './routes/authRoutes';
 
 const app = express();
 
@@ -16,3 +16,4 @@ Dbconnection().then(() => {
     console.error('Failed to connect to the database:', error);
 });
 
+app.use('/api/auth', authRoutes);
