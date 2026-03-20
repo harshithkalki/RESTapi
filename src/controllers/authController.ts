@@ -43,10 +43,14 @@ export async function loginUsers(req:Request, res:Response){
     if(!isPasswordvalid){
         return res.status(400).json({message: 'Invalid email or password'});
     }
-    const token = jwt.sign({userId: Dbuser._id, email: Dbuser.email}, process.env.JWT_SECRET as string, {expiresIn: '1h'});
+    const token = jwt.sign({userId: Dbuser._id, email: Dbuser.email}, process.env.JWT_SECRET as string, {expiresIn: '15m'});
+    const refreshToken = jwt.sign({userId: Dbuser._id, email: Dbuser.email}, process.env.REFRESH_TOKEN_SECRET as string, {expiresIn: '7d'});
+    Dbuser.refreshToken = refreshToken;
+    await Dbuser.save();
     const responseUser= Dbuser.toObject();
     delete responseUser.password// Exclude password from response
-    res.status(200).json({message: 'Login successful', user: responseUser, token});
+    delete responseUser.refreshToken// Exclude refresh token from response
+    res.status(200).json({message: 'Login successful', user: responseUser, token, refreshToken});
 }
 catch(error){
     console.log('Error logging in user:', error);
@@ -54,7 +58,39 @@ catch(error){
 }
 }
 
+export async function refreshToken(req:Request, res:Response){
+    const {refreshToken}= req.body;
+    if(!refreshToken){
+        return res.status(400).json({message: 'No refresh token provided'});
+    }
+    try{
+    const payload = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET as string);
+    
+    const user = await User.findOne({refreshToken: refreshToken});
+    if(!user){
+        return res.status(403).json({message: 'Invalid refresh token'});
+    }
+    const newToken = jwt.sign({userId: user._id, email: user.email}, process.env.JWT_SECRET as string, {expiresIn: '15m'});
+    res.status(200).json({token: newToken});
+    }catch(error){
+        return res.status(403).json({message: 'Invalid refresh token'});
+    }
+}
+
 export async function logoutUsers(req:Request, res:Response){
     // Implement logout logic here (if using token-based authentication, you might want to handle token invalidation)
+    const userId = req.user.userId;
+    try{
+    const user = await User.findById(userId);
+    if(!user){
+        return res.status(404).json({message: 'User not found'});
+    }
+    user.refreshToken = undefined;
+    await user.save();
+    }
+    catch(error){
+        console.log('Error logging out user:', error);
+        return res.status(500).json({message: 'Error logging out user', error});
+    }
     res.status(200).json({message: 'Logout successful'});
 }
