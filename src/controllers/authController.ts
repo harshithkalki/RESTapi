@@ -63,17 +63,19 @@ export async function refreshToken(req:Request, res:Response){
     if(!refreshToken){
         return res.status(400).json({message: 'No refresh token provided'});
     }
+    let errorc=0;
     try{
     const payload = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET as string);
-    
+    errorc++;
     const user = await User.findOne({refreshToken: refreshToken});
     if(!user){
-        return res.status(403).json({message: 'Invalid refresh token'});
+        return res.status(403).json({message: 'Invalid refresh token user not found'});
     }
+    errorc++;
     const newToken = jwt.sign({userId: user._id, email: user.email}, process.env.JWT_SECRET as string, {expiresIn: '15m'});
     res.status(200).json({token: newToken});
     }catch(error){
-        return res.status(403).json({message: 'Invalid refresh token'});
+        return res.status(403).json({message: 'Invalid refresh token'+ ` ${errorc}`});
     }
 }
 
